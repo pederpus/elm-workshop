@@ -21,6 +21,30 @@ update msg model =
         CardClick card ->
             { model | game = updateCardClick card model.game }
 
+        ResetGame ->
+            { model | game = Choosing DeckGenerator.static }
+
+        Cheat ->
+            { model | game = cheatMode model.game }
+
+
+cheatMode : GameState -> GameState
+cheatMode state =
+    case state of
+        Choosing deck ->
+            deck |> setAllToMatched |> Choosing
+
+        Matching card deck ->
+            deck |> setAllToMatched |> Choosing
+
+        GameOver ->
+            GameOver
+
+
+setAllToMatched : Deck -> Deck
+setAllToMatched deck =
+    List.map (\c -> { c | state = Matched }) deck
+
 
 view : Model -> Html Msg
 view model =
@@ -32,7 +56,16 @@ view model =
             viewCards deck
 
         GameOver ->
-            div [] [ text "You won!" ]
+            div [ class "victory" ]
+                [ div []
+                    [ text "You won!"
+                    , button
+                        [ onClick ResetGame
+                        , class "btn"
+                        ]
+                        [ text "New game" ]
+                    ]
+                ]
 
 
 closeUnmatched : Deck -> Deck
@@ -64,6 +97,11 @@ isMatching card1 card2 =
     card1.group /= card2.group && card1.id == card2.id
 
 
+allMatching : Deck -> Bool
+allMatching deck =
+    List.all (\c -> c.state == Matched) deck
+
+
 updateCardClick : Card -> GameState -> GameState
 updateCardClick clickedCard state =
     case state of
@@ -84,9 +122,12 @@ updateCardClick clickedCard state =
                             |> setCard openCard Matched
                             |> setCard clickedCard Matched
                     else
-                        deck
+                        setCard clickedCard Open deck
             in
-                Matching openCard deck
+                if allMatching updatedDeck then
+                    GameOver
+                else
+                    Choosing updatedDeck
 
         GameOver ->
             GameOver
@@ -100,6 +141,16 @@ viewCards cards =
         , div
             [ class "cards" ]
             (List.map viewCard cards)
+        , button
+            [ onClick ResetGame
+            , class "btn"
+            ]
+            [ text "Reset game" ]
+        , button
+            [ onClick Cheat
+            , class "btn"
+            ]
+            [ text "Cheat" ]
         ]
 
 
@@ -115,7 +166,7 @@ viewCard card =
         Closed ->
             img
                 [ src "/static/cats/closed.png"
-                , class "closed"
+                , class "closed card"
                 , onClick (CardClick card)
                 ]
                 []
@@ -123,10 +174,8 @@ viewCard card =
 
 cardImg : String -> String -> Html a
 cardImg imgPath cls =
-    div []
-        [ img
-            [ src imgPath
-            , class cls
-            ]
-            []
+    img
+        [ src imgPath
+        , class (cls ++ " card")
         ]
+        []

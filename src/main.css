@@ -4,7 +4,7 @@ body {
   font-size: 30px;
   margin: 0;
   text-align: center;
-  color: #293c4b;
+  color: #d976ff;
 }
 
 h1 {
@@ -16,6 +16,12 @@ img {
   max-width: 200px;
   border-radius: 999px;
   max-height: 200px;
+}
+
+img:hover {
+  opacity: 1;
+  -webkit-animation: flash 1.5s;
+  animation: flash 1.5s;
 }
 
 ul {
@@ -43,19 +49,29 @@ ul {
   -moz-box-sizing: border-box;
   box-sizing: border-box;
   justify-content: space-between;
+  cursor: pointer;
+}
+
+.card:hover {
+  color: #d976ff;
 }
 
 .victory {
   font-size: 72px;
 }
 
-.restart {
+.btn {
   display: block;
   margin: 0 auto;
   border: 0;
   background: none;
   font-family: inherit;
   font-size: 24px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  text-shadow: 0 0 5px #d976ff;
 }
 
 .row {

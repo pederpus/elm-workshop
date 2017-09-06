@@ -19,7 +19,6 @@ type GameState
     | Matching Card Deck
     | GameOver
 
-
 type alias Model =
     { game : GameState
     }
@@ -36,6 +35,8 @@ type alias Deck =
 
 type Msg
     = CardClick Card
+    | ResetGame
+    | Cheat
 
 
 openCard : Card
