@@ -38,6 +38,7 @@ type Msg
     | RestartGame
     | Cheat
     | RandomDeck Deck
+    | GoToGameover
 
 
 openCard : Card
