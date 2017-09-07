@@ -5,27 +5,44 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (onClick)
 import Model exposing (..)
+import Random
 
 
 main =
-    Html.beginnerProgram
-        { model = { game = Choosing DeckGenerator.static }
+    Html.program
+        { init =
+            ( { game = Choosing DeckGenerator.static }
+            , generateDeck
+            )
         , view = view
         , update = update
+        , subscriptions = subscriptions
         }
 
 
-update : Msg -> Model -> Model
+generateDeck : Cmd Msg
+generateDeck = Random.generate RandomDeck DeckGenerator.random
+
+
+subscriptions : Model -> Sub msg
+subscriptions model =
+    Sub.none
+
+
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CardClick card ->
-            { model | game = updateCardClick card model.game }
+            ( { model | game = updateCardClick card model.game }, Cmd.none )
 
-        ResetGame ->
-            { model | game = Choosing DeckGenerator.static }
+        RestartGame ->
+            ( { model | game = Choosing DeckGenerator.static }, generateDeck )
 
         Cheat ->
-            { model | game = cheatMode model.game }
+            ( { model | game = cheatMode model.game }, Cmd.none )
+
+        RandomDeck deck ->
+            ( { model | game = Choosing deck }, Cmd.none )
 
 
 cheatMode : GameState -> GameState
@@ -60,7 +77,7 @@ view model =
                 [ div []
                     [ text "You won!"
                     , button
-                        [ onClick ResetGame
+                        [ onClick RestartGame
                         , class "btn"
                         ]
                         [ text "New game" ]
@@ -142,10 +159,10 @@ viewCards cards =
             [ class "cards" ]
             (List.map viewCard cards)
         , button
-            [ onClick ResetGame
+            [ onClick RestartGame
             , class "btn"
             ]
-            [ text "Reset game" ]
+            [ text "Restart" ]
         , button
             [ onClick Cheat
             , class "btn"

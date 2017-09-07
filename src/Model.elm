@@ -35,8 +35,9 @@ type alias Deck =
 
 type Msg
     = CardClick Card
-    | ResetGame
+    | RestartGame
     | Cheat
+    | RandomDeck Deck
 
 
 openCard : Card
