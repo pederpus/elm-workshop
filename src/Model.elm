@@ -21,6 +21,7 @@ type GameState
 
 type alias Model =
     { game : GameState
+    , score : Int
     }
 
 

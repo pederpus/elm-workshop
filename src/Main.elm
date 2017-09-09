@@ -14,7 +14,7 @@ import Time
 main =
     Html.program
         { init =
-            ( { game = Choosing DeckGenerator.static }
+            ( { game = Choosing DeckGenerator.static, score = 0 }
             , generateDeck
             )
         , view = view
@@ -39,14 +39,34 @@ delay time msg =
         |> Task.perform (\_ -> msg)
 
 
+updateScore : GameState -> Int -> Int
+updateScore game score =
+    case game of
+        Matching _ _ ->
+            score + 1
+
+        _ ->
+            score
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         CardClick card ->
-            ( { model | game = updateCardClick card model.game }, Cmd.none )
+            ( { model
+                | game = updateCardClick card model.game
+                , score = updateScore model.game model.score
+              }
+            , Cmd.none
+            )
 
         RestartGame ->
-            ( { model | game = Choosing DeckGenerator.static }, generateDeck )
+            ( { model
+                | game = Choosing DeckGenerator.static
+                , score = 0
+              }
+            , generateDeck
+            )
 
         Cheat ->
             ( { model | game = cheatMode model.game }, delay (Time.second * 2) GoToGameover )
@@ -80,10 +100,10 @@ view : Model -> Html Msg
 view model =
     case model.game of
         Choosing deck ->
-            viewCards deck
+            viewBoard model deck
 
         Matching card deck ->
-            viewCards deck
+            viewBoard model deck
 
         GameOver ->
             div [ class "victory" ]
@@ -163,24 +183,27 @@ updateCardClick clickedCard state =
             GameOver
 
 
-viewCards : List Card -> Html Msg
-viewCards cards =
+viewBoard : Model -> Deck -> Html Msg
+viewBoard model cards =
     div []
         [ h3 []
             [ text "Memory Meow" ]
         , div
             [ class "cards" ]
             (List.map viewCard cards)
-        , button
-            [ onClick RestartGame
-            , class "btn"
+        , div []
+            [ text ("Score: " ++ (toString model.score))
+            , button
+                [ onClick RestartGame
+                , class "btn"
+                ]
+                [ text "Restart" ]
+            , button
+                [ onClick Cheat
+                , class "btn"
+                ]
+                [ text "Cheat" ]
             ]
-            [ text "Restart" ]
-        , button
-            [ onClick Cheat
-            , class "btn"
-            ]
-            [ text "Cheat" ]
         ]
 
 
