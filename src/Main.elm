@@ -3,7 +3,7 @@ module Main exposing (..)
 import DeckGenerator
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (..)
 import Model exposing (..)
 import Process
 import Random
@@ -11,11 +11,16 @@ import Task
 import Time
 
 
+main : Program Never Model Msg
 main =
     Html.program
         { init =
-            ( { game = Choosing DeckGenerator.static, score = 0 }
-            , generateDeck
+            ( { game = GameOver
+              , score = 0
+              , name = ""
+              , highscores = []
+              }
+            , Cmd.none
             )
         , view = view
         , update = update
@@ -69,13 +74,31 @@ update msg model =
             )
 
         Cheat ->
-            ( { model | game = cheatMode model.game }, delay (Time.second * 2) GoToGameover )
+            ( { model | game = cheatMode model.game }, delay (Time.second * 1) GoToGameover )
 
         RandomDeck deck ->
             ( { model | game = Choosing deck }, Cmd.none )
 
         GoToGameover ->
             ( { model | game = GameOver }, Cmd.none )
+
+        NameInput name ->
+            ( { model | name = name }, Cmd.none )
+
+        SaveName ->
+            ( { model
+                | game = HighScore
+                , name = ""
+                , highscores =
+                    saveHighscore model
+              }
+            , Cmd.none
+            )
+
+
+saveHighscore : Model -> List UserScore
+saveHighscore model =
+    { name = model.name, score = model.score } :: model.highscores
 
 
 cheatMode : GameState -> GameState
@@ -87,8 +110,8 @@ cheatMode state =
         Matching card deck ->
             deck |> setAllToMatched |> Choosing
 
-        GameOver ->
-            GameOver
+        _ ->
+            state
 
 
 setAllToMatched : Deck -> Deck
@@ -109,13 +132,70 @@ view model =
             div [ class "victory" ]
                 [ div []
                     [ text "You won!"
-                    , button
-                        [ onClick RestartGame
-                        , class "btn"
+                    , div []
+                        [ text
+                            ("Your score is "
+                                ++ (toString
+                                        model.score
+                                   )
+                            )
                         ]
-                        [ text "New game" ]
+                    , enterNameForm
+                    , newGameButton
                     ]
                 ]
+
+        HighScore ->
+            div []
+                [ h3 [] [ text "HighScore" ]
+                , ul [] (viewHighScores model.highscores)
+                , newGameButton
+                ]
+
+
+newGameButton =
+    button
+        [ onClick RestartGame
+        , class "btn"
+        ]
+        [ text "New game" ]
+
+
+viewHighScores : List UserScore -> List (Html Msg)
+viewHighScores highscores =
+    highscores
+        |> List.sortBy .score
+        |> List.reverse
+        |> List.map viewHighScore
+
+
+viewHighScore : UserScore -> Html Msg
+viewHighScore userscore =
+    li []
+        [ text
+            (userscore.name
+                ++ "     "
+                ++ (toString userscore.score)
+            )
+        ]
+
+
+enterNameForm : Html Msg
+enterNameForm =
+    Html.form
+        [ onSubmit SaveName ]
+        [ label
+            [ for "entername" ]
+            [ text "Enter name" ]
+        , input
+            [ id "entername"
+            , onInput NameInput
+            ]
+            []
+        , button
+            [ class "btn", type_ "submit" ]
+            [ text "Save" ]
+        ]
 
 
 closeUnmatched : Deck -> Deck
@@ -179,8 +259,8 @@ updateCardClick clickedCard state =
                 else
                     Choosing updatedDeck
 
-        GameOver ->
-            GameOver
+        _ ->
+            state
 
 
 viewBoard : Model -> Deck -> Html Msg

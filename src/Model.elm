@@ -1,6 +1,12 @@
 module Model exposing (..)
 
 
+type alias UserScore =
+    { name : String
+    , score : Int
+    }
+
+
 type CardState
     = Open
     | Closed
@@ -18,10 +24,14 @@ type GameState
     = Choosing Deck
     | Matching Card Deck
     | GameOver
+    | HighScore
+
 
 type alias Model =
     { game : GameState
     , score : Int
+    , name : String
+    , highscores : List UserScore
     }
 
 
@@ -40,6 +50,8 @@ type Msg
     | Cheat
     | RandomDeck Deck
     | GoToGameover
+    | NameInput String
+    | SaveName
 
 
 openCard : Card
