@@ -1,5 +1,7 @@
 module Model exposing (..)
 
+import Time exposing (Time)
+
 
 type alias UserScore =
     { name : String
@@ -30,6 +32,8 @@ type GameState
 type alias Model =
     { game : GameState
     , score : Int
+    , t0 : Time
+    , t1 : Time
     , name : String
     , highscores : List UserScore
     }
@@ -48,10 +52,12 @@ type Msg
     = CardClick Card
     | RestartGame
     | Cheat
-    | RandomDeck Deck
-    | GoToGameover
+    | StartGame Deck
     | NameInput String
     | SaveName
+    | EndGame
+    | NewTime Time
+    | EndTime Time
 
 
 openCard : Card

@@ -8,19 +8,22 @@ import Model exposing (..)
 import Process
 import Random
 import Task
-import Time
+import Time exposing (Time)
+import Date exposing (..)
 
 
 main : Program Never Model Msg
 main =
     Html.program
         { init =
-            ( { game = GameOver
+            ( { game = Choosing DeckGenerator.static
               , score = 0
               , name = ""
+              , t0 = 0
+              , t1 = 0
               , highscores = []
               }
-            , Cmd.none
+            , generateDeck
             )
         , view = view
         , update = update
@@ -30,7 +33,7 @@ main =
 
 generateDeck : Cmd Msg
 generateDeck =
-    Random.generate RandomDeck DeckGenerator.random
+    Random.generate StartGame DeckGenerator.random
 
 
 subscriptions : Model -> Sub msg
@@ -57,6 +60,15 @@ updateScore game score =
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        EndGame ->
+            ( model, Task.perform EndTime Time.now )
+
+        NewTime time ->
+            ( { model | t0 = time }, Cmd.none )
+
+        EndTime time ->
+            ( { model | t1 = time, game = GameOver }, Cmd.none )
+
         CardClick card ->
             ( { model
                 | game = updateCardClick card model.game
@@ -74,13 +86,14 @@ update msg model =
             )
 
         Cheat ->
-            ( { model | game = cheatMode model.game }, delay (Time.second * 1) GoToGameover )
+            ( { model | game = cheatMode model.game }
+            , delay
+                (Time.second * 1)
+                EndGame
+            )
 
-        RandomDeck deck ->
-            ( { model | game = Choosing deck }, Cmd.none )
-
-        GoToGameover ->
-            ( { model | game = GameOver }, Cmd.none )
+        StartGame deck ->
+            ( { model | game = Choosing deck }, Task.perform NewTime Time.now )
 
         NameInput name ->
             ( { model | name = name }, Cmd.none )
@@ -119,6 +132,30 @@ setAllToMatched deck =
     List.map (\c -> { c | state = Matched }) deck
 
 
+zeroPad : String -> String
+zeroPad timeString =
+    if String.length timeString == 1 then
+        "0"
+            ++ timeString
+    else
+        timeString
+
+
+printTime : Time -> Html Msg
+printTime time =
+    let
+        seconds =
+            Time.inSeconds time |> round |> toString |> zeroPad
+
+        minutes =
+            Time.inMinutes time |> round |> toString |> zeroPad
+
+        hours =
+            Time.inHours time |> round |> toString |> zeroPad
+    in
+        text <| "Your time is: " ++ hours ++ ":" ++ minutes ++ ":" ++ seconds ++ "s"
+
+
 view : Model -> Html Msg
 view model =
     case model.game of
@@ -140,6 +177,7 @@ view model =
                                    )
                             )
                         ]
+                    , printTime (model.t1 - model.t0)
                     , enterNameForm
                     , newGameButton
                     ]
@@ -153,6 +191,7 @@ view model =
                 ]
 
 
+newGameButton : Html Msg
 newGameButton =
     button
         [ onClick RestartGame
